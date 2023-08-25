@@ -1,0 +1,48 @@
+/* custom.css */
+
+/* Change the background color of the entire app */
+body {
+  background-color: #f0f0f0; /* Replace this with your desired light gray color */
+}
+
+/* Change the background color of the entire banner */
+.title-container {
+  background-color: #4567CD; /* Replace this with your desired color */
+  color: #ffffff; /* Change the text color to make it readable */
+}
+
+/* Add padding for the dropdown containers */
+
+.custom-dropdown {
+  padding-bottom: 20px; /* Add 20 pixels of padding at the bottom of each dropdown */
+}
+
+/* Add styles for the image */
+
+.logo-img {
+  position: absolute;
+  top: 10px; /* Adjust the top position to control the vertical alignment */
+  right: 10px; /* Adjust the right position to control the horizontal alignment */
+  width: 50px; /* Set the width of the image as needed */
+  height: 50px; /* Set the height of the image as needed */
+  z-index: 1; /* Ensure the image is positioned above other elements */
+}
+
+/* Add styles for the chart container */
+.chart-container {
+  text-align: left; /* Center the content horizontally within the container */
+}
+
+/* Add styles for the caption text */
+.caption-text {
+  font-size: 11px; /* Set the font size for the caption text (adjust as needed) */
+  color: #888888; /* Set the text color for the caption text (adjust as needed) */
+  font-style: italic; /* Set the font style to italic */
+}
+
+/* Region drop down padding */
+.padded-dropdown {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+

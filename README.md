@@ -1,2 +1,3 @@
-# real_estate_application
-Building out a real estate application to help with market analysis
+# python-fundamentals
+learning the basics of python
+Comment: Test with Michael

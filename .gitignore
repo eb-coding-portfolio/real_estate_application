@@ -1,0 +1,5 @@
+file_to_ignore.txt 
+src/components/backend/market_tracker.db
+.idea/ 
+*.pyc
+src/components/backend/.env
