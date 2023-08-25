@@ -12,7 +12,8 @@ import os
 from sqlalchemy import create_engine
 
 if __name__ == "__main__":
-    DATABASE_URL = os.environ.get('DATABASE_URL')
+    DATABASE_URL = os.environ.get('DATABASE_URL').replace("postgres://", "postgresql://")
+
     engine = create_engine(DATABASE_URL)
 
     data = pd.read_sql('SELECT * FROM market_tracker', engine)
