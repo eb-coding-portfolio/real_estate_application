@@ -1,8 +1,10 @@
 import pandas as pd
-import sqlite3
-from src.components.backend import load_data as ld
+import os
+
+from sqlalchemy import create_engine
 from config import table_columns
 import numpy as np
+
 
 def get_stat_val(input_dataframe: pd.DataFrame, column: str, stat: str):
     if column in ('period_end', 'period_begin'):
@@ -53,22 +55,27 @@ def convert_to_percent(df: pd.DataFrame, column_name: str):
     return converted_df
 
 
-def calculate_differences(df, state_code, property_type, compare_to):
+def calculate_differences(state_code, property_type, compare_to, sql_engine):
     metric_list = [column for column in table_columns if 'yoy' in column]
-    # Step 1: Filter the dataframe
-    max_date = get_stat_val(df, 'period_end', 'max')
+
+    # Get max date across all levels (metro, state, national) from database
+    get_max_date = pd.read_sql('select MAX(period_end) as max_date from market_tracker', sql_engine)
+    max_date = get_max_date.iloc[0, 0]
+
     # Step 1: Filter the dataframe by max_date and property_type
-    filtered_df_by_date_and_property = df[
-        (df['period_end'] == max_date) &
-        (df['property_type'] == property_type)
-        ]
+    prop_and_date_query = f"select * from market_tracker where property_type = '{property_type}' AND period_end = '{max_date}'"
+    print(prop_and_date_query)
+    df = pd.read_sql(prop_and_date_query, sql_engine)
+    df.to_csv(r'C:\Users\Eric C. Balduf\Documents\df.csv')
 
     # Step 2: Further filter by state_code and region_type
-    filtered_df = filtered_df_by_date_and_property[
-        ((filtered_df_by_date_and_property['region_type'].isin(['metro', 'state']) &
-          (filtered_df_by_date_and_property['state_code'] == state_code)) |
-         (filtered_df_by_date_and_property['region_type'] == 'national'))
+    filtered_df = df[
+        ((df['region_type'].isin(['metro', 'state']) &
+          (df['state_code'] == state_code)) |
+         (df['region_type'] == 'national'))
     ]
+    filtered_df.to_csv(r'C:\Users\Eric C. Balduf\Documents\filtered_df.csv')
+
     # Step 2: Determine the reference row
     if compare_to == 'state':
         reference_rows = filtered_df[filtered_df['region_type'] == 'state'].iloc[0]
@@ -132,23 +139,14 @@ def add_heatmap_annotations(fig, data):
 
 
 if __name__ == "__main__":
-    conn = sqlite3.connect('src/components/backend/market_tracker.db')
-    cursor = conn.cursor()
-    query = f"""
+    DATABASE_URL = os.environ.get('DATABASE_URL').replace("postgres://", "postgresql://")
 
-            SELECT * FROM {ld.table_names['metro']}
-            UNION ALL 
-            SELECT * FROM {ld.table_names['state']}
-            UNION ALL 
-            SELECT * FROM {ld.table_names['national']}
-            
-            """
-    data = pd.read_sql_query(query, conn)
+    engine = create_engine(DATABASE_URL)
     state_code = 'TX'
     property_type = 'All Residential'  # replace with the desired property type
     compare_to = 'national'
-    result = calculate_differences(data, state_code, property_type, compare_to)
-    result.to_csv(r'C:\Users\Eric C. Balduf\Documents\table_test.csv')
+    result = calculate_differences(state_code, property_type, compare_to, engine)
+    result.to_csv(r'C:\Users\Eric C. Balduf\Documents\result.csv')
 
     # conn = sqlite3.connect('market_tracker.db')
     # cursor = conn.cursor()

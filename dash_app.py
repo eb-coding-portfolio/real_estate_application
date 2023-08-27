@@ -8,6 +8,7 @@ from src.components.frontend import ui_ids
 from config import percentage_metric_list, table_columns
 import numpy as np
 import os
+from plotly import graph_objects as go
 
 from sqlalchemy import create_engine
 
@@ -16,7 +17,9 @@ if __name__ == "__main__":
 
     engine = create_engine(DATABASE_URL)
 
-    data = pd.read_sql('SELECT * FROM market_tracker', engine)
+    state_filter = 'state'
+
+    data = pd.read_sql(f"SELECT * FROM market_tracker where region_type = '{state_filter}'", engine)
 
     external_stylesheets = ['https://bootswatch.com/5/litera/bootstrap.css', 'custom.css']
     app = Dash(__name__, external_stylesheets=external_stylesheets)
@@ -31,12 +34,19 @@ if __name__ == "__main__":
     def update_us_map(selected_metric, selected_property_type):
         map_input_df = pd.DataFrame(data)
 
-        max_date = get_stat_val(map_input_df, 'period_end', 'max')
+        get_max_date = pd.read_sql('select MAX(period_end) as max_date from market_tracker', engine)
+        max_date = get_max_date.iloc[0, 0]
 
         map_df = map_input_df[(map_input_df['period_end'] == max_date) &
                               (map_input_df['region_type'] == 'state') &
                               (map_input_df['property_type'] == selected_property_type)][
             ['state_code', selected_metric]]
+
+        # Calculate the 5th, 25th, 50th, and 75th percentiles for the selected metric
+        p5 = np.percentile(map_df[selected_metric], 5)
+        p25 = np.percentile(map_df[selected_metric], 25)
+        p50 = np.percentile(map_df[selected_metric], 50)
+        p75 = np.percentile(map_df[selected_metric], 75)
 
         if selected_metric in percentage_metric_list:
             hover_data = {selected_metric: ':.2%'}
@@ -50,8 +60,10 @@ if __name__ == "__main__":
                             scope="usa",
                             color_continuous_scale='deep',
                             hover_data=hover_data,
+                            range_color=(p5, p75),
                             )
         fig.update_coloraxes(colorbar_tickformat=tickformat)
+
         return fig
 
 
@@ -74,8 +86,7 @@ if __name__ == "__main__":
         else:
             state_code = clickData['points'][0]['location']
 
-        heat_map_data = calculate_differences(data, state_code, heat_map_prop_type, compare_to)
-        heat_map_data.to_csv(r'C:\Users\Eric C. Balduf\Documents\heat_map_data.csv')
+        heat_map_data = calculate_differences(state_code, heat_map_prop_type, compare_to, engine)
 
         ctx = callback_context
         if not ctx.triggered:
@@ -101,9 +112,7 @@ if __name__ == "__main__":
         end_idx = start_idx + 10
         paginated_differences = heat_map_data[start_idx:end_idx]
 
-        paginated_differences.to_csv(r'C:\Users\Eric C. Balduf\Documents\paginated_differences.csv')
         paginated_differences_filtered = paginated_differences[metric_list]
-        paginated_differences_filtered.to_csv(r'C:\Users\Eric C. Balduf\Documents\paginated_differences_filtered.csv')
 
         paginated_differences_filtered_percentile = paginated_differences_filtered.fillna(0)
 
@@ -133,4 +142,3 @@ if __name__ == "__main__":
     app.title = "purlieu"
     app.layout = create_layout(app, data, prop_type_options)
     app.run()
-    conn.close()
