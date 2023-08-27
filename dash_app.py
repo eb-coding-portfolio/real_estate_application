@@ -8,7 +8,7 @@ from src.components.frontend import ui_ids
 from config import percentage_metric_list, table_columns
 import numpy as np
 import os
-import psutil
+# import psutil
 
 from sqlalchemy import create_engine
 
