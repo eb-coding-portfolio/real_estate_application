@@ -8,13 +8,15 @@ from src.components.frontend import ui_ids
 from config import percentage_metric_list, table_columns
 import numpy as np
 import os
-from plotly import graph_objects as go
+import psutil
 
 from sqlalchemy import create_engine
 
 if __name__ == "__main__":
-    DATABASE_URL = os.environ.get('DATABASE_URL').replace("postgres://", "postgresql://")
 
+    port = int(os.environ.get("PORT", 5000))
+
+    DATABASE_URL = os.environ.get('DATABASE_URL').replace("postgres://", "postgresql://")
     engine = create_engine(DATABASE_URL)
 
     state_filter = 'state'
@@ -139,6 +141,9 @@ if __name__ == "__main__":
         return fig_metrics_added, new_page
 
 
+    # process = psutil.Process(os.getpid())
+    # print("Memory Usage Before UI Startup:", process.memory_info().rss / 1024 / 1024, "MB")
+
     app.title = "purlieu"
     app.layout = create_layout(app, data, prop_type_options)
-    app.run()
+    app.run(host='0.0.0.0', port=port)
