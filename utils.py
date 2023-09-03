@@ -118,6 +118,7 @@ def add_heatmap_annotations(fig, data):
             value = data.iloc[y, x]
             # Convert the number to a percentage and format it only if the value is not NaN
             percentage_text = f"{value * 100:.2f}%" if not np.isnan(value) else ""
+            bolded_text = f"<b>{percentage_text}</b>"  # Wrap with HTML bold tags
 
             annotations.append(
                 dict(
@@ -125,12 +126,12 @@ def add_heatmap_annotations(fig, data):
                     y=y,
                     xref='x',
                     yref='y',
-                    text=percentage_text,
+                    text=bolded_text,
                     showarrow=False,
                     font=dict(
                         family="Arial",
                         size=10,
-                        color="black"
+                        color="black",
                     )
                 )
             )

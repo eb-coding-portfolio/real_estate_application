@@ -1,6 +1,6 @@
 from dash import Dash, callback_context
 import pandas as pd
-from src.components.frontend.layout import create_layout
+from src.components.frontend.layout import create_layout, create_tab_1_content, create_tab_2_content
 from dash.dependencies import Input, Output, State
 import plotly.express as px
 from utils import get_stat_val, calculate_differences, add_heatmap_annotations
@@ -27,6 +27,7 @@ if __name__ == "__main__":
     app = Dash(__name__, external_stylesheets=external_stylesheets)
     data_filters_prop_type = data['property_type'].unique()
     prop_type_options = [{'label': prop_type, 'value': prop_type} for prop_type in data_filters_prop_type]
+
 
     @app.callback(
         Output(ui_ids.US_MAP, 'figure'),
@@ -60,11 +61,15 @@ if __name__ == "__main__":
                             color=selected_metric,  # DataFrame column with color values
                             locationmode="USA-states",  # built-in location mode for U.S. states
                             scope="usa",
-                            color_continuous_scale='deep',
+                            color_continuous_scale='haline',
                             hover_data=hover_data,
                             range_color=(p5, p75),
                             )
-        fig.update_coloraxes(colorbar_tickformat=tickformat)
+        fig.update_coloraxes(colorbar_tickformat=tickformat, colorbar=dict(x=0.7, y=0.7))
+        fig.update_layout(
+            margin=dict(l=10, r=10, t=10, b=10),
+            autosize=True
+        )
 
         return fig
 
@@ -127,23 +132,41 @@ if __name__ == "__main__":
             labels=dict(x="Metrics", y="Metros", color="Difference"),
             x=metric_list,
             y=paginated_differences['region'].tolist(),
-            color_continuous_scale='deep',
+            color_continuous_scale='haline',
             range_color=[percentiles[0], percentiles[-1]]
         )
 
         fig_metrics_added = add_heatmap_annotations(fig, paginated_differences_filtered)
 
-        fig_metrics_added.update_layout(width=2000, height=800)
         fig_metrics_added.update_layout(coloraxis_colorbar=dict(
             tickvals=percentiles,
             ticktext=[f"{p * 100:.2f}%" for p in percentiles]
         ))
+        fig_metrics_added.update_coloraxes(colorbar=dict(x=0.75, y=0.7))
+        fig_metrics_added.update_layout(
+            margin=dict(l=10, r=10, t=10, b=10),
+            autosize=True
+        )
+
         return fig_metrics_added, new_page
+
+
+    # New Callback to switch tabs
+    @app.callback(
+        Output('tabs-content', 'children'),
+        [Input('tabs', 'value')]
+    )
+    def update_tab(tab_name):
+        if tab_name == 'tab1':
+            return create_tab_1_content(data, prop_type_options)
+        elif tab_name == 'tab2':
+            return create_tab_2_content()
 
 
     # process = psutil.Process(os.getpid())
     # print("Memory Usage Before UI Startup:", process.memory_info().rss / 1024 / 1024, "MB")
 
     app.title = "purlieu"
-    app.layout = create_layout(app, data, prop_type_options)
+    app.layout = create_layout(app)
+    # app.layout = create_layout(app, data, prop_type_options, active_tab='tab1')
     app.run(host='0.0.0.0', port=port)

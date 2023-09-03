@@ -20,3 +20,8 @@ BTN_PREV = 'prev-button'
 BTN_NXT = 'next-button'
 
 DIV_PGNUM = 'page-number'
+TABS = 'tabs'
+TABS_CONTENT = 'tabs-content'
+TAB_1 = 'tab1'
+TAB_2 = 'tab2'
+TAB_DIVS = 'tab-divs'
