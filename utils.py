@@ -1,6 +1,11 @@
 import pandas as pd
 import os
 
+# from fbprophet import Prophet
+#from sklearn.metrics import mean_squared_error
+from math import sqrt
+import matplotlib.pyplot as plt
+
 from sqlalchemy import create_engine
 from config import table_columns
 import numpy as np
@@ -117,7 +122,7 @@ def add_heatmap_annotations(fig, data):
         for x in range(data.shape[1]):
             value = data.iloc[y, x]
             # Convert the number to a percentage and format it only if the value is not NaN
-            percentage_text = f"{value * 100:.2f}%" if not np.isnan(value) else ""
+            percentage_text = f"{value * 100:.1f}%" if not np.isnan(value) else ""
             bolded_text = f"<b>{percentage_text}</b>"  # Wrap with HTML bold tags
 
             annotations.append(
@@ -130,7 +135,7 @@ def add_heatmap_annotations(fig, data):
                     showarrow=False,
                     font=dict(
                         family="Arial",
-                        size=10,
+                        size=9,
                         color="black",
                     )
                 )
@@ -143,10 +148,19 @@ if __name__ == "__main__":
     DATABASE_URL = os.environ.get('DATABASE_URL').replace("postgres://", "postgresql://")
 
     engine = create_engine(DATABASE_URL)
-    state_code = 'TX'
-    property_type = 'All Residential'  # replace with the desired property type
-    compare_to = 'national'
-    result = calculate_differences(state_code, property_type, compare_to, engine)
+    selected_metric = 'median_sale_price_yoy'
+    metro = 'Austin, TX metro area'
+    prop_type = 'All Residential'
+
+    query = f"""
+    SELECT period_end as ds , {selected_metric} as y FROM market_tracker 
+    where region_type = 'metro' 
+    and region =  '{metro}'
+    and property_type = {prop_type}
+    """
+
+    data = pd.read_sql(query, engine)
+
     result.to_csv(r'C:\Users\Eric C. Balduf\Documents\result.csv')
 
     # conn = sqlite3.connect('market_tracker.db')

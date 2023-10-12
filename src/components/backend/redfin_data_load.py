@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 import time
-from sqlalchemy import create_engine, Column, Integer, String, Float, PrimaryKeyConstraint, Date, DateTime
+from sqlalchemy import create_engine, Column, Integer, String, Float, PrimaryKeyConstraint, Date, DateTime, text, exc
 from sqlalchemy.orm import declarative_base
 from dotenv import load_dotenv
 
@@ -95,9 +95,9 @@ def main():
     Base.metadata.create_all(engine)
 
     dataset_files = [
-        'https://redfin-public-data.s3.us-west-2.amazonaws.com/redfin_market_tracker/redfin_metro_market_tracker.tsv000.gz',
         'https://redfin-public-data.s3.us-west-2.amazonaws.com/redfin_market_tracker/state_market_tracker.tsv000.gz',
-        'https://redfin-public-data.s3.us-west-2.amazonaws.com/redfin_market_tracker/us_national_market_tracker.tsv000.gz'
+        'https://redfin-public-data.s3.us-west-2.amazonaws.com/redfin_market_tracker/us_national_market_tracker.tsv000.gz',
+        'https://redfin-public-data.s3.us-west-2.amazonaws.com/redfin_market_tracker/redfin_metro_market_tracker.tsv000.gz'
     ]
 
     # Ensure all datasets have the same columns
@@ -109,18 +109,39 @@ def main():
         elif column_set != set(df.columns):
             raise ValueError("All datasets must have the same columns. Mismatch found!")
 
-    # Load data from URLs into PostgreSQL using pandas and SQLAlchemy
-    for dataset_url in dataset_files:
-        print(f"Loading data from {dataset_url}...")
-        start_time = time.time()
-        df = pd.read_csv(dataset_url, sep='\t')
-        if "us_national_market_tracker" in dataset_url:
-            df = remove_duplicates(df)
-        df.to_sql("market_tracker", engine, if_exists='replace', index=False)
-        end_time = time.time()
-        print(f"Loaded data from {dataset_url} in {end_time - start_time:.2f} seconds.")
+    with engine.begin() as connection:
+        try:
+            connection.execute(text("TRUNCATE TABLE market_tracker;"))
 
-    print("Data loaded successfully into PostgreSQL!")
+            result = connection.execute(text("SELECT COUNT(*) FROM market_tracker;"))
+            row_count = result.scalar()  # fetches the first column of the first row, which is the count
+
+            if row_count == 0:
+                print("Truncation was successful. The table is now empty.")
+            else:
+                print(f"Truncation failed. There are still {row_count} rows in the table.")
+
+            # Load data from URLs into PostgreSQL using pandas and SQLAlchemy
+            for dataset_url in dataset_files:
+                print(f"Loading data from {dataset_url}...")
+                start_time = time.time()
+                df = pd.read_csv(dataset_url, sep='\t')
+                if "us_national_market_tracker" in dataset_url:
+                    df = remove_duplicates(df)
+                df.to_sql("market_tracker", connection, if_exists='append', index=False)
+                end_time = time.time()
+                print(f"Loaded data from {dataset_url} in {end_time - start_time:.2f} seconds.")
+
+            print("Data loaded successfully into PostgreSQL!")
+
+        except exc.SQLAlchemyError as e:
+            print("An error occurred while processing the transaction:", str(e))
+            connection.rollback()
+            print("Transaction rolled back due to error.")
+        except Exception as e:
+            print("An unexpected error occurred:", str(e))
+            connection.rollback()
+            print("Transaction rolled back due to error.")
 
 
 if __name__ == "__main__":

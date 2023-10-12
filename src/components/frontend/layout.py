@@ -4,7 +4,7 @@ from src.components.frontend import ui_ids
 from config import metric_list, table_columns
 
 
-def create_tab_1_content(data: pd.DataFrame, prop_type_options: list):
+def create_tab_1_content(prop_type_options: list, global_max_date):
     return [
         html.Div(
             className=ui_ids.TAB_DIVS,
@@ -12,6 +12,9 @@ def create_tab_1_content(data: pd.DataFrame, prop_type_options: list):
                 html.Div(
                     className='dropdown-container',
                     children=[
+                        html.P(f'Redfin Data As of: {global_max_date.iloc[0, 0]}',
+                               style={'margin-bottom': '10px', 'font-size': '11px',
+                                      'color': '#888888','font-style': 'italic'}),
                         html.H6('Property Type'),
                         dcc.Dropdown(
                             id=ui_ids.PROPERTY_TYPE_DROP,

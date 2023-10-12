@@ -22,6 +22,7 @@ if __name__ == "__main__":
     state_filter = 'state'
 
     data = pd.read_sql(f"SELECT * FROM market_tracker where region_type = '{state_filter}'", engine)
+    global_max_date = pd.read_sql('select MAX(period_end) as max_date from market_tracker', engine)
 
     external_stylesheets = ['https://bootswatch.com/5/litera/bootstrap.css', 'custom.css']
     app = Dash(__name__, external_stylesheets=external_stylesheets)
@@ -37,8 +38,7 @@ if __name__ == "__main__":
     def update_us_map(selected_metric, selected_property_type):
         map_input_df = pd.DataFrame(data)
 
-        get_max_date = pd.read_sql('select MAX(period_end) as max_date from market_tracker', engine)
-        max_date = get_max_date.iloc[0, 0]
+        max_date = global_max_date.iloc[0, 0]
 
         map_df = map_input_df[(map_input_df['period_end'] == max_date) &
                               (map_input_df['region_type'] == 'state') &
@@ -52,8 +52,8 @@ if __name__ == "__main__":
         p75 = np.percentile(map_df[selected_metric], 75)
 
         if selected_metric in percentage_metric_list:
-            hover_data = {selected_metric: ':.2%'}
-            tickformat = '.2%'
+            hover_data = {selected_metric: ':.1%'}
+            tickformat = '.1%'
         else:
             hover_data = None
             tickformat = None
@@ -65,7 +65,7 @@ if __name__ == "__main__":
                             hover_data=hover_data,
                             range_color=(p5, p75),
                             )
-        fig.update_coloraxes(colorbar_tickformat=tickformat, colorbar=dict(x=0.7, y=0.7))
+        fig.update_coloraxes(colorbar_tickformat=tickformat, colorbar=dict(x=0.85, y=0.7))
         fig.update_layout(
             margin=dict(l=10, r=10, t=10, b=10),
             autosize=True
@@ -140,16 +140,15 @@ if __name__ == "__main__":
 
         fig_metrics_added.update_layout(coloraxis_colorbar=dict(
             tickvals=percentiles,
-            ticktext=[f"{p * 100:.2f}%" for p in percentiles]
+            ticktext=[f"{p * 100:.1f}%" for p in percentiles]
         ))
-        fig_metrics_added.update_coloraxes(colorbar=dict(x=0.75, y=0.7))
+        fig_metrics_added.update_coloraxes(colorbar=dict(x=0.9, y=0.7))
         fig_metrics_added.update_layout(
-            margin=dict(l=10, r=10, t=10, b=10),
-            autosize=True
+            height=650,  # Adjust as needed
+            width=900  # Adjust as needed
         )
 
         return fig_metrics_added, new_page
-
 
     # New Callback to switch tabs
     @app.callback(
@@ -158,7 +157,7 @@ if __name__ == "__main__":
     )
     def update_tab(tab_name):
         if tab_name == 'tab1':
-            return create_tab_1_content(data, prop_type_options)
+            return create_tab_1_content(prop_type_options, global_max_date)
         elif tab_name == 'tab2':
             return create_tab_2_content()
 
