@@ -81,8 +81,16 @@ def create_tab_1_content(prop_type_options: list, global_max_date):
                         html.P("Data provided by Redfin, a national real estate brokerage.",
                                className='caption-text')
                     ], style={"display": "flex", "flexDirection": "column", "height": "80vh"}
+                ),
+                html.Div(
+                    className='line-chart-container',
+                    children=[
+                        dcc.Graph(id=ui_ids.LINE_CHART_ID),
+                        html.P("Data provided by Redfin, a national real estate brokerage.",
+                               className='caption-text')
+                    ],
                 )
-                # Existing content ends here
+
             ]  # Children of the new outer Div end here
         )  # New outer Div ends here
     ]
@@ -128,5 +136,6 @@ def create_layout(app: Dash):
                     ),
                 ]
             ),
-            html.Div(id=ui_ids.TABS_CONTENT)
+            html.Div(id=ui_ids.TABS_CONTENT),
+            html.Div(id='hidden-div', style={'display': 'none'})
         ])

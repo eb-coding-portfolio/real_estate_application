@@ -3,11 +3,12 @@ import pandas as pd
 from src.components.frontend.layout import create_layout, create_tab_1_content, create_tab_2_content
 from dash.dependencies import Input, Output, State
 import plotly.express as px
-from utils import get_stat_val, calculate_differences, add_heatmap_annotations
+from utils import calculate_differences, add_heatmap_annotations, line_chart_predict
 from src.components.frontend import ui_ids
 from config import percentage_metric_list, table_columns
 import numpy as np
 import os
+import plotly.graph_objs as go
 # import psutil
 
 from sqlalchemy import create_engine
@@ -86,7 +87,6 @@ if __name__ == "__main__":
     )
     def update_heatmap(compare_to, prev_clicks, next_clicks, heat_map_prop_type, clickData, current_page):
         metric_list = [column for column in table_columns if 'yoy' in column]
-        print(clickData)
         if clickData is None:
             # If no state has been clicked, don't update the table.
             state_code = 'CA'
@@ -150,7 +150,61 @@ if __name__ == "__main__":
 
         return fig_metrics_added, new_page
 
-    # New Callback to switch tabs
+    @app.callback(
+        Output(ui_ids.LINE_CHART_ID, 'figure'),
+        Input(ui_ids.HOUSING_TABLE_ID, 'clickData'),
+        Input(ui_ids.PROPERTY_TYPE_DROP, 'value'),
+    )
+    def update_line_graph(clickData, line_prop_type):
+        print("Callback triggered!")
+
+        if clickData:
+            # Safely extract the relevant data from clickData
+            try:
+                # Extract row and column indices from clickData
+                metro = clickData['points'][0]['y']
+                metric = clickData['points'][0]['x'].replace("_yoy", "")
+
+                print(f"Metros Value: {metro}, Metrics Value: {metric}")
+                print(clickData)
+            except (TypeError, KeyError, IndexError):
+                print("Error extracting data from clickData:", clickData)
+        else:
+            metro = 'Anaheim, CA metro area'
+            metric = 'median_sale_price'
+
+        line_chart_df = line_chart_predict(metric, metro, line_prop_type, engine)
+        line_chart_df['period_end'] = pd.to_datetime(line_chart_df['period_end'])  # Convert the date column to datetime
+        line_chart_df = line_chart_df.sort_values(by='period_end')
+
+        # Create the base line plot for the metric
+        fig = px.line(line_chart_df, x='period_end', y=metric, line_shape='linear')
+
+        #Extract rows where lower and upper bounds are available
+        predictions = line_chart_df.dropna()
+        predictions.to_csv(r'C:\Users\Eric C. Balduf\Documents\pred_plot.csv')
+        # Add the confidence interval as a shaded area
+        fig.add_trace(go.Scatter(
+            x=predictions['period_end'].tolist() + predictions['period_end'].tolist()[::-1],
+            y=predictions['lower bound'].tolist() + predictions['upper bound'].tolist()[::-1],
+            fill='toself',
+            fillcolor='rgba(0,100,80,0.2)',
+            line=dict(color='rgba(255,255,255,0)'),
+            showlegend=False,
+            name='Prediction Interval',
+        ))
+
+        # Update layout options if needed
+        fig.update_layout(
+            yaxis_title=metric,
+            xaxis_title='Date',
+            title=f'{metric}, {line_prop_type} property type for {metro} with 12 month prediction',
+        )
+
+        return fig  # Return an empty string since we're not updating any visible component
+
+
+    #Callback to switch tabs
     @app.callback(
         Output('tabs-content', 'children'),
         [Input('tabs', 'value')]

@@ -1,8 +1,8 @@
 import pandas as pd
 import os
 
-# from fbprophet import Prophet
-#from sklearn.metrics import mean_squared_error
+from prophet import Prophet
+# from sklearn.metrics import mean_squared_error
 from math import sqrt
 import matplotlib.pyplot as plt
 
@@ -69,7 +69,7 @@ def calculate_differences(state_code, property_type, compare_to, sql_engine):
 
     # Step 1: Filter the dataframe by max_date and property_type
     prop_and_date_query = f"select * from market_tracker where property_type = '{property_type}' AND period_end = '{max_date}'"
-    print(prop_and_date_query)
+    # print(prop_and_date_query)
     df = pd.read_sql(prop_and_date_query, sql_engine)
     df.to_csv(r'C:\Users\Eric C. Balduf\Documents\df.csv')
 
@@ -107,6 +107,54 @@ def calculate_differences(state_code, property_type, compare_to, sql_engine):
     diff_df = diff_df.dropna(subset=metric_list, how='all')
 
     return diff_df
+
+
+def line_chart_predict(line_metric, line_metro, line_prop_type, line_engine):
+    query = f"""
+    SELECT period_end, {line_metric}
+    FROM market_tracker 
+    where region_type = 'metro' 
+    and region =  '{line_metro}'
+    and property_type = '{line_prop_type}'
+    """
+
+    result = pd.read_sql(query, line_engine)
+
+    # result.to_csv(r'C:\Users\Eric C. Balduf\Documents\result_db.csv', index=False)
+
+    result['period_end'] = pd.to_datetime(result['period_end'])
+
+    # Prophet requires columns ds (date) and y (value)
+    model_df = result.rename(columns={'period_end': 'ds', line_metric: 'y'})
+
+    print(model_df.columns)
+    model = Prophet()
+    model.fit(model_df)
+
+    # Create a dataframe for future dates (12 months into the future)
+    future = model.make_future_dataframe(periods=12, freq='M')
+
+    # Predict
+    forecast = model.predict(future)
+
+    # Convert the 'ds' column to datetime type for date comparison
+    forecast['ds'] = pd.to_datetime(forecast['ds'])
+
+    original_max_date = result['period_end'].max()
+
+    # Filter the dataframe based on columns and date condition
+    filtered_df = forecast[forecast['ds'] > original_max_date][['ds', 'yhat', 'yhat_lower', 'yhat_upper']]
+
+    filtered_df.rename(
+        columns={'ds': 'period_end', 'yhat': line_metric, 'yhat_lower': 'lower bound', 'yhat_upper': 'upper bound'},
+        inplace=True)
+
+    result['lower bound'] = np.nan
+    result['upper bound'] = np.nan
+    plot_df = pd.concat([result, filtered_df])
+
+    return plot_df
+
 
 
 def add_heatmap_annotations(fig, data):
@@ -148,20 +196,12 @@ if __name__ == "__main__":
     DATABASE_URL = os.environ.get('DATABASE_URL').replace("postgres://", "postgresql://")
 
     engine = create_engine(DATABASE_URL)
-    selected_metric = 'median_sale_price_yoy'
-    metro = 'Austin, TX metro area'
+    selected_metric = 'median_sale_price'
+    metro = 'Anaheim, CA metro area'
     prop_type = 'All Residential'
 
-    query = f"""
-    SELECT period_end as ds , {selected_metric} as y FROM market_tracker 
-    where region_type = 'metro' 
-    and region =  '{metro}'
-    and property_type = {prop_type}
-    """
-
-    data = pd.read_sql(query, engine)
-
-    result.to_csv(r'C:\Users\Eric C. Balduf\Documents\result.csv')
+    prd_line = line_chart_predict(selected_metric, metro, prop_type, engine)
+    prd_line.to_csv(r'C:\Users\Eric C. Balduf\Documents\result_plot_func.csv', index=False)
 
     # conn = sqlite3.connect('market_tracker.db')
     # cursor = conn.cursor()
