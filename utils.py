@@ -109,7 +109,7 @@ def calculate_differences(state_code, property_type, compare_to, sql_engine):
     return diff_df
 
 
-def line_chart_predict(line_metric, line_metro, line_prop_type, line_engine):
+def line_chart_predict(line_metric, line_metro, line_prop_type, line_engine, years_before_max=5):
     query = f"""
     SELECT period_end, {line_metric}
     FROM market_tracker 
@@ -151,10 +151,15 @@ def line_chart_predict(line_metric, line_metro, line_prop_type, line_engine):
 
     result['lower bound'] = np.nan
     result['upper bound'] = np.nan
-    plot_df = pd.concat([result, filtered_df])
+    combined_df = pd.concat([result, filtered_df])
+
+    max_combined_date = combined_df['period_end'].max()
+
+    combined_start_date = max_combined_date - pd.DateOffset(years=years_before_max)
+
+    plot_df = combined_df[combined_df['period_end'] >= combined_start_date]
 
     return plot_df
-
 
 
 def add_heatmap_annotations(fig, data):

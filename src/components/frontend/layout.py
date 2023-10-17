@@ -75,20 +75,27 @@ def create_tab_1_content(prop_type_options: list, global_max_date):
                     ]
                 ),
                 html.Div(
-                    className='heat-map-container',
+                    style={"display": "flex"},  # This will arrange the children side by side
                     children=[
-                        dcc.Graph(id=ui_ids.HOUSING_TABLE_ID, style={"height": "70vh"}),
-                        html.P("Data provided by Redfin, a national real estate brokerage.",
-                               className='caption-text')
-                    ], style={"display": "flex", "flexDirection": "column", "height": "80vh"}
-                ),
-                html.Div(
-                    className='line-chart-container',
-                    children=[
-                        dcc.Graph(id=ui_ids.LINE_CHART_ID),
-                        html.P("Data provided by Redfin, a national real estate brokerage.",
-                               className='caption-text')
-                    ],
+                        html.Div(
+                            className='heat-map-container',
+                            children=[
+                                dcc.Graph(id=ui_ids.HOUSING_TABLE_ID, style={"height": "70vh"}),
+                                html.P("Data provided by Redfin, a national real estate brokerage.",
+                                       className='caption-text')
+                            ],
+                            style={"flex": "1", "display": "flex", "flexDirection": "column", "height": "80vh"}
+                        ),
+                        html.Div(
+                            className='line-chart-container',
+                            children=[
+                                dcc.Graph(id=ui_ids.LINE_CHART_ID),
+                                html.P("Data provided by Redfin, a national real estate brokerage.",
+                                       className='caption-text')
+                            ],
+                            style={"flex": "1"}  # This makes it take up half the available width (or adjust as needed)
+                        )
+                    ]
                 )
 
             ]  # Children of the new outer Div end here

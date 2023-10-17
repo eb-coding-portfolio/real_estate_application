@@ -144,8 +144,8 @@ if __name__ == "__main__":
         ))
         fig_metrics_added.update_coloraxes(colorbar=dict(x=0.9, y=0.7))
         fig_metrics_added.update_layout(
-            height=650,  # Adjust as needed
-            width=900  # Adjust as needed
+            height=675,
+            width=900
         )
 
         return fig_metrics_added, new_page
@@ -177,12 +177,13 @@ if __name__ == "__main__":
         line_chart_df['period_end'] = pd.to_datetime(line_chart_df['period_end'])  # Convert the date column to datetime
         line_chart_df = line_chart_df.sort_values(by='period_end')
 
-        # Create the base line plot for the metric
-        fig = px.line(line_chart_df, x='period_end', y=metric, line_shape='linear')
-
         #Extract rows where lower and upper bounds are available
         predictions = line_chart_df.dropna()
         predictions.to_csv(r'C:\Users\Eric C. Balduf\Documents\pred_plot.csv')
+
+        # Create an empty figure
+        fig = go.Figure()
+
         # Add the confidence interval as a shaded area
         fig.add_trace(go.Scatter(
             x=predictions['period_end'].tolist() + predictions['period_end'].tolist()[::-1],
@@ -194,11 +195,22 @@ if __name__ == "__main__":
             name='Prediction Interval',
         ))
 
+        #add plot line to graph
+        fig.add_trace(go.Scatter(
+            x=line_chart_df['period_end'],
+            y=line_chart_df[metric],
+            mode='lines',
+            name=metric,
+            showlegend=False
+        ))
+
         # Update layout options if needed
         fig.update_layout(
             yaxis_title=metric,
             xaxis_title='Date',
-            title=f'{metric}, {line_prop_type} property type for {metro} with 12 month prediction',
+            title=f'{line_prop_type} property type for {metro} with 12 month prediction',
+            height=675,
+            width=900
         )
 
         return fig  # Return an empty string since we're not updating any visible component
