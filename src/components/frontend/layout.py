@@ -107,7 +107,7 @@ def create_tab_2_content():
     return html.Div(
         className=ui_ids.TAB_DIVS,
         children=[
-            html.H3('Market Selection Content Coming Soon!')
+            html.H3('Market Economics Content Coming Soon!')
         ]
     )
 
@@ -138,7 +138,7 @@ def create_layout(app: Dash):
                     ),
                     dcc.Tab(
                         id=ui_ids.TAB_2,
-                        label='Market Selection',
+                        label='Market Economics',
                         value='tab2'
                     ),
                 ]

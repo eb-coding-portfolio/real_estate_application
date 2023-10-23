@@ -1,14 +1,13 @@
 import pandas as pd
 import os
-
-from prophet import Prophet
-# from sklearn.metrics import mean_squared_error
-from math import sqrt
-import matplotlib.pyplot as plt
-
+from pmdarima import auto_arima
+from pmdarima.model_selection import train_test_split
 from sqlalchemy import create_engine
-from config import table_columns
 import numpy as np
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
+from config import table_columns, cohort_raw
+import numpy as np
+import time
 
 
 def get_stat_val(input_dataframe: pd.DataFrame, column: str, stat: str):
@@ -110,6 +109,8 @@ def calculate_differences(state_code, property_type, compare_to, sql_engine):
 
 
 def line_chart_predict(line_metric, line_metro, line_prop_type, line_engine, years_before_max=5):
+    print("Starting the line_chart_predict function.")
+
     query = f"""
     SELECT period_end, {line_metric}
     FROM market_tracker 
@@ -118,48 +119,60 @@ def line_chart_predict(line_metric, line_metro, line_prop_type, line_engine, yea
     and property_type = '{line_prop_type}'
     """
 
+    start_time = time.time()
     result = pd.read_sql(query, line_engine)
+    result.to_csv(r'C:\Users\Eric C. Balduf\Documents\result_plot_result.csv', index=False)
+    print(result)
+    print(f"Data fetched in {time.time() - start_time:.2f} seconds.")
 
-    # result.to_csv(r'C:\Users\Eric C. Balduf\Documents\result_db.csv', index=False)
-
+    start_time = time.time()
     result['period_end'] = pd.to_datetime(result['period_end'])
+    print(f"Converted 'period_end' to datetime in {time.time() - start_time:.2f} seconds.")
 
-    # Prophet requires columns ds (date) and y (value)
-    model_df = result.rename(columns={'period_end': 'ds', line_metric: 'y'})
+    # Preparing data for ETS
+    data = result.set_index('period_end').sort_index()
 
-    print(model_df.columns)
-    model = Prophet()
-    model.fit(model_df)
+    print("Fitting the ETS model...")
+    start_time = time.time()
 
-    # Create a dataframe for future dates (12 months into the future)
-    future = model.make_future_dataframe(periods=12, freq='M')
+    try:
+        # Fitting the ETS model using the entire dataset
+        model = ExponentialSmoothing(data[line_metric], trend='add', seasonal='add', seasonal_periods=12)
+        model_fit = model.fit()
 
-    # Predict
-    forecast = model.predict(future)
+        # Generating a 12-month forecast
+        predictions = model_fit.forecast(12)
+        predictions.to_csv(r'C:\Users\Eric C. Balduf\Documents\result_plot_predictions.csv', index=False)
+        # Calculate the standard error of the residuals
+        residuals = data[line_metric] - model_fit.fittedvalues
+        std_error = residuals.std()
 
-    # Convert the 'ds' column to datetime type for date comparison
-    forecast['ds'] = pd.to_datetime(forecast['ds'])
+        # Calculate the upper and lower bounds (90% confidence)
+        z_value = 1.645  # 90% confidence
+        upper_bound = predictions + (z_value * std_error)
+        lower_bound = predictions - (z_value * std_error)
 
-    original_max_date = result['period_end'].max()
+        forecast = pd.DataFrame({
+            'period_end': [data.index[-1] + pd.DateOffset(months=i) for i in range(1, 13)],
+            line_metric: predictions,
+            'upper bound': upper_bound,
+            'lower bound': lower_bound
+        })
 
-    # Filter the dataframe based on columns and date condition
-    filtered_df = forecast[forecast['ds'] > original_max_date][['ds', 'yhat', 'yhat_lower', 'yhat_upper']]
+        # Concatenate the original data with the forecast
+        plot_df = pd.concat([data, forecast.set_index('period_end')])
+        # Filter the output based on years_before_max
+        max_date = plot_df.index.max()
+        start_date = max_date - pd.DateOffset(years=years_before_max)
+        output = plot_df[plot_df.index >= start_date]
 
-    filtered_df.rename(
-        columns={'ds': 'period_end', 'yhat': line_metric, 'yhat_lower': 'lower bound', 'yhat_upper': 'upper bound'},
-        inplace=True)
+        print(f"ETS model fitted and predictions generated in {time.time() - start_time:.2f} seconds.")
 
-    result['lower bound'] = np.nan
-    result['upper bound'] = np.nan
-    combined_df = pd.concat([result, filtered_df])
+        return output.reset_index().rename(columns={"index": "Date"})
 
-    max_combined_date = combined_df['period_end'].max()
-
-    combined_start_date = max_combined_date - pd.DateOffset(years=years_before_max)
-
-    plot_df = combined_df[combined_df['period_end'] >= combined_start_date]
-
-    return plot_df
+    except Exception as e:
+        print(f"Error encountered while processing metric {line_metric}: {e}")
+        return None
 
 
 def add_heatmap_annotations(fig, data):
@@ -199,14 +212,20 @@ def add_heatmap_annotations(fig, data):
 
 if __name__ == "__main__":
     DATABASE_URL = os.environ.get('DATABASE_URL').replace("postgres://", "postgresql://")
-
     engine = create_engine(DATABASE_URL)
-    selected_metric = 'median_sale_price'
-    metro = 'Anaheim, CA metro area'
-    prop_type = 'All Residential'
+    #prd_line = line_chart_predict('inventory', 'August, ME metro area', 'All Residential', engine)
+    #prd_line.to_csv(r'C:\Users\Eric C. Balduf\Documents\result_plot_func_holtw.csv', index=False)
+    #
+    # engine = create_engine(DATABASE_URL)
+    #
+    # query = """
+    # SELECT period_end, region, property_type, median_sale_price, median_list_price, homes_sold, inventory, avg_sale_to_list
+    # FROM market_tracker
+    # where region_type = 'metro'
+    # """
 
-    prd_line = line_chart_predict(selected_metric, metro, prop_type, engine)
-    prd_line.to_csv(r'C:\Users\Eric C. Balduf\Documents\result_plot_func.csv', index=False)
+    # prd_line = line_chart_predict(selected_metric, metro, prop_type, engine)
+    # prd_line.to_csv(r'C:\Users\Eric C. Balduf\Documents\result_plot_func.csv', index=False)
 
     # conn = sqlite3.connect('market_tracker.db')
     # cursor = conn.cursor()

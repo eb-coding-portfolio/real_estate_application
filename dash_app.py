@@ -156,7 +156,6 @@ if __name__ == "__main__":
         Input(ui_ids.PROPERTY_TYPE_DROP, 'value'),
     )
     def update_line_graph(clickData, line_prop_type):
-        print("Callback triggered!")
 
         if clickData:
             # Safely extract the relevant data from clickData
@@ -165,7 +164,6 @@ if __name__ == "__main__":
                 metro = clickData['points'][0]['y']
                 metric = clickData['points'][0]['x'].replace("_yoy", "")
 
-                print(f"Metros Value: {metro}, Metrics Value: {metric}")
                 print(clickData)
             except (TypeError, KeyError, IndexError):
                 print("Error extracting data from clickData:", clickData)
@@ -199,6 +197,7 @@ if __name__ == "__main__":
         fig.add_trace(go.Scatter(
             x=line_chart_df['period_end'],
             y=line_chart_df[metric],
+            line=dict(color='rgba(0,0,255,0.5)'),
             mode='lines',
             name=metric,
             showlegend=False
@@ -231,7 +230,7 @@ if __name__ == "__main__":
     # process = psutil.Process(os.getpid())
     # print("Memory Usage Before UI Startup:", process.memory_info().rss / 1024 / 1024, "MB")
 
-    app.title = "purlieu"
+    app.title = "RE.Wise"
     app.layout = create_layout(app)
     # app.layout = create_layout(app, data, prop_type_options, active_tab='tab1')
     app.run(host='0.0.0.0', port=port)
