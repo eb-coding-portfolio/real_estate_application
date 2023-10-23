@@ -230,7 +230,7 @@ if __name__ == "__main__":
     # process = psutil.Process(os.getpid())
     # print("Memory Usage Before UI Startup:", process.memory_info().rss / 1024 / 1024, "MB")
 
-    app.title = "RE.Wise"
+    app.title = "Realty.Wise"
     app.layout = create_layout(app)
     # app.layout = create_layout(app, data, prop_type_options, active_tab='tab1')
     app.run(host='0.0.0.0', port=port)
