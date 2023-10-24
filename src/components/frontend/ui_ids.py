@@ -1,3 +1,5 @@
+APP_TITLE = 'app-title'
+
 STATE_CODE_DROP = 'state-code-dd'
 STATE_CODE_INPUT = 'state-code-input'
 
@@ -19,6 +21,11 @@ SELECT_COMP = 'compare-to-selector'
 
 BTN_PREV = 'prev-button'
 BTN_NXT = 'next-button'
+BTN_START = 'start-button'
+
+MRKD_MDL = 'markdown-modal'
+CLOSE_MDL = 'close-modal'
+MRKD_UGUIDE = 'markdown-userguide'
 
 DIV_PGNUM = 'page-number'
 TABS = 'tabs'

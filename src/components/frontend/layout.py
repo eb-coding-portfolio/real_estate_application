@@ -19,7 +19,7 @@ def create_tab_1_content(prop_type_options: list, global_max_date):
                         dcc.Dropdown(
                             id=ui_ids.PROPERTY_TYPE_DROP,
                             options=prop_type_options,
-                            style={"width": "300px", "font-size": "16px"},
+                            style={"width": "300px", "font-size": "16px", "margin-bottom": "5px"},
                             value='All Residential',
                             multi=False,
                             placeholder='Select a property type',
@@ -32,7 +32,7 @@ def create_tab_1_content(prop_type_options: list, global_max_date):
                                 {"label": metric, "value": metric}
                                 for metric in metric_list
                             ],
-                            style={"width": "300px", "font-size": "16px"},
+                            style={"width": "300px", "font-size": "16px", "margin-bottom": "5px"},
                             value='median_sale_price_yoy',
                             multi=False,
                             placeholder='Select a metric',
@@ -119,12 +119,36 @@ def create_layout(app: Dash):
             html.Div(
                 className='title-container',
                 children=[
-                    html.H1(app.title),
-                    html.Img(
-                        src='assets/map_Marker.png',
-                        className='logo-img'
+                    html.H1(app.title, id=ui_ids.APP_TITLE),
+                    html.Div(
+                        className='button-marker-group',
+                        children=[
+                            html.Button('Start Here!', id=ui_ids.BTN_START),
+                            html.Img(
+                                src='assets/map_Marker.png',
+                                className='logo-img'
+                            )
+                        ]
                     ),
                     html.Hr(),
+                    html.Div(
+                        id=ui_ids.MRKD_MDL,
+                        style={'display': 'none'},
+                        className='modal',
+                        children=[
+                            html.Div(
+                                className='modal-content',
+                                children=[
+                                    html.Span(
+                                        id=ui_ids.CLOSE_MDL,
+                                        className='close-button',
+                                        children='×'
+                                    ),
+                                    dcc.Markdown("", id=ui_ids.MRKD_UGUIDE, style={"color": "black"})
+                                ]
+                            )
+                        ]
+                    )
                 ],
             ),
             dcc.Tabs(

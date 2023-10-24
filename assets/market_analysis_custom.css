@@ -7,17 +7,39 @@ body {
 
 /* Change the background color of the entire banner */
 .title-container {
-  background-color: #4567CD; /* Replace this with your desired color */
-  color: #ffffff; /* Change the text color to make it readable */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #4567CD;
+  color: #ffffff;
+  padding: 2px 20px;  /* Reduced the top and bottom padding to 2px */
 }
 
-/* Add padding for the dropdown containers */
-
-.custom-dropdown {
-  padding-bottom: 20px; /* Add 20 pixels of padding at the bottom of each dropdown */
+.title-container h1 {
+  flex: 1; /* This will make the title take up as much space as possible, pushing the button and marker to the right */
 }
 
-/* Add styles for the image */
+.button-marker-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* This pushes the children to the right */
+  margin-right: 40px;
+}
+
+#start-button {
+    border: 3px solid #ed5565;  /* Color of the border */
+    background-color: transparent;  /* No fill/background color */
+    color: #ffffff;  /* Text color */
+    font-weight: bold;  /* Bold text */
+    font-family: 'Litera', sans-serif;  /* Setting the font to 'Litera' */
+    cursor: pointer;  /* Change cursor to pointer when hovering over the button */
+    transition: background-color 0.3s ease;  /* Smooth transition for hover effect */
+}
+
+#start-button:hover {
+    background-color: #035591;  /* Fill color on hover */
+    color: #ffffff;  /* Text color on hover */
+}
 
 .logo-img {
   position: absolute;
@@ -52,7 +74,8 @@ body {
   min-width: 200px;  /* Minimum width */
   padding: 6px 12px !important;
   font-size: 14px !important;
-  margin-bottom: 20px !important;  /* Add some space below the tabs */
+  margin-top: 10px !important;  /* Add some space below the tabs */
+  margin-bottom: 10px !important;  /* Add some space below the tabs */
 
 }
 
@@ -70,4 +93,42 @@ body {
   margin-bottom: 20px;
   background-color: #f9f9f9;
   border: 1px solid #d6d6d6;
+}
+
+/* Modal Styling*/
+
+#markdown-modal {
+    position: fixed;
+    z-index: 1;
+    left: 50%; /* Center the modal horizontally */
+    top: 50%;  /* Center the modal vertically */
+    transform: translate(-50%, -50%); /* Ensure the modal is centered correctly */
+    width: 70%; /* Adjust as needed */
+    height: 80%; /* Adjust as needed */
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+    display: none; /* Hidden by default */
+}
+
+
+#markdown-modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+}
+
+#close-modal {
+    color: #aaaaaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+#close-modal:hover,
+#close-modal:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
 }

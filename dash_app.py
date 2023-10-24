@@ -1,4 +1,4 @@
-from dash import Dash, callback_context
+from dash import Dash, callback_context, no_update
 import pandas as pd
 from src.components.frontend.layout import create_layout, create_tab_1_content, create_tab_2_content
 from dash.dependencies import Input, Output, State
@@ -150,6 +150,7 @@ if __name__ == "__main__":
 
         return fig_metrics_added, new_page
 
+
     @app.callback(
         Output(ui_ids.LINE_CHART_ID, 'figure'),
         Input(ui_ids.HOUSING_TABLE_ID, 'clickData'),
@@ -175,7 +176,7 @@ if __name__ == "__main__":
         line_chart_df['period_end'] = pd.to_datetime(line_chart_df['period_end'])  # Convert the date column to datetime
         line_chart_df = line_chart_df.sort_values(by='period_end')
 
-        #Extract rows where lower and upper bounds are available
+        # Extract rows where lower and upper bounds are available
         predictions = line_chart_df.dropna()
         predictions.to_csv(r'C:\Users\Eric C. Balduf\Documents\pred_plot.csv')
 
@@ -193,7 +194,7 @@ if __name__ == "__main__":
             name='Prediction Interval',
         ))
 
-        #add plot line to graph
+        # add plot line to graph
         fig.add_trace(go.Scatter(
             x=line_chart_df['period_end'],
             y=line_chart_df[metric],
@@ -215,7 +216,7 @@ if __name__ == "__main__":
         return fig  # Return an empty string since we're not updating any visible component
 
 
-    #Callback to switch tabs
+    # Callback to switch tabs
     @app.callback(
         Output('tabs-content', 'children'),
         [Input('tabs', 'value')]
@@ -226,6 +227,33 @@ if __name__ == "__main__":
         elif tab_name == 'tab2':
             return create_tab_2_content()
 
+
+    @app.callback(
+        [
+            Output('markdown-modal', 'style'),
+            Output('markdown-userguide', 'children')
+        ],
+        [
+            Input('start-button', 'n_clicks'),
+            Input('close-modal', 'n_clicks')
+        ],
+        [State('markdown-modal', 'style')]
+    )
+    def toggle_modal(start_btn, close_btn, modal_style):
+        ctx = callback_context
+        if not ctx.triggered:
+            return no_update, no_update
+        else:
+            button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+        if button_id == 'start-button' and start_btn:
+            with open('assets/user_guide.md', 'r') as file:
+                markdown_content = file.read()
+            return {"display": "block"}, markdown_content
+        elif button_id == 'close-modal' and close_btn:
+            return {"display": "none"}, no_update
+        else:
+            return no_update, no_update
 
     # process = psutil.Process(os.getpid())
     # print("Memory Usage Before UI Startup:", process.memory_info().rss / 1024 / 1024, "MB")
